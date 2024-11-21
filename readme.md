@@ -31,4 +31,4 @@ newUser counter name =
     in
     ( newCounter, { id = id, name = name } )
 
-```elm
+```
