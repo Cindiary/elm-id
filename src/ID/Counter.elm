@@ -55,7 +55,7 @@ newID =
     Internal.newID
 
 
-{-| Same as [`newID`](ID.Counter#newID) but creates 2 [`ID`](ID#ID)s instead of 1 -}
+{-| Same as [`newID`](ID.Counter#newID) but creates 2 IDs instead of 1 -}
 newID2 : Counter (ID a) -> ( ID a, ID a, Counter (ID a) )
 newID2 (IDCounter nextID) =
     ( ID nextID
@@ -64,7 +64,7 @@ newID2 (IDCounter nextID) =
     )
 
 
-{-| Same as [`newID`](ID.Counter#newID) but creates 3 [`ID`](ID#ID)s instead of 1 -}
+{-| Same as [`newID`](ID.Counter#newID) but creates 3 IDs instead of 1 -}
 newID3 : Counter (ID a) -> ( { id1 : ID a, id2 : ID a, id3 : ID a }, Counter (ID a) )
 newID3 (IDCounter nextID) =
     ( { id1 = ID nextID
@@ -75,7 +75,7 @@ newID3 (IDCounter nextID) =
     )
 
 
-{-| Same as [`newID`](ID.Counter#newID) but creates 4 [`ID`](ID#ID)s instead of 1 -}
+{-| Same as [`newID`](ID.Counter#newID) but creates 4 IDs instead of 1 -}
 newID4 : Counter (ID a) -> ( { id1 : ID a, id2 : ID a, id3 : ID a, id4 : ID a }, Counter (ID a) )
 newID4 (IDCounter nextID) =
     ( { id1 = ID nextID
@@ -87,14 +87,14 @@ newID4 (IDCounter nextID) =
     )
 
 
-{-| Assign [`ID`](ID#ID)s to a number of values, make sure to use the new counter to create any new IDs -}
+{-| Assign IDs to a number of values, make sure to use the new counter to create any new IDs -}
 giveIDs : (ID a -> b -> c) -> Counter (ID a) -> List b -> ( List c, Counter (ID a) )
 giveIDs func (IDCounter nextID) items =
     ( List.indexedMap (\i item -> func (ID (nextID + i)) item) items, IDCounter (nextID + List.length items) )
 
 
 {-|
-Account for a list of [`ID`](ID#ID)s.
+Account for a list of IDs.
 This should not be necessary if you always make sure to use the counter result from [`newID`](ID.Counter#newID), but can be used to sanitize the counter after encoding and decoding a counter and values
 -}
 accountForIDs : List (ID a) -> Counter (ID a) -> Counter (ID a)
@@ -117,7 +117,7 @@ accountForItemIDs getID items counter =
 
 
 {-| Same as [`accountForIDs`](ID.Counter#accountForIDs) but can be used with a [`Dict`](ID.Dict#Dict) -}
-accountForDictIDs : ID.Dict.Dict counter (ID a) value -> Counter (ID a) -> Counter (ID a)
+accountForDictIDs : Internal.Dict counter (ID a) value -> Counter (ID a) -> Counter (ID a)
 accountForDictIDs ( Internal.IDDict _ dict ) counter =
     Dict.keys dict
     |> accountForIDvalues counter
@@ -136,7 +136,7 @@ accountForIDvalues ((IDCounter currentValue) as counter) values =
             counter
 
 
-{-| Account for all used [`ID`](ID#ID)s in the counter (as in [`accountForIDs`](ID.Counter#accountForIDs)) and give new [`ID`](ID#ID)s to any items that have a duplicate [`ID`](ID#ID) -}
+{-| Account for all used IDs in the counter (as in [`accountForIDs`](ID.Counter#accountForIDs)) and give new IDs to any items that have a duplicate [`ID`](ID#ID) -}
 sanitizeIDs : (val -> ID a) -> (val -> ID a -> val) -> List val -> Counter (ID a) -> ( List val, Counter (ID a) )
 sanitizeIDs getter setter items counter =
     let

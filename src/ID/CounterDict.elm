@@ -17,8 +17,7 @@ module ID.CounterDict exposing
 @docs encode, decoder
 -}
 
-import Internal exposing (ID(..), Dict(..), unpack)
-import ID.Dict exposing(Dict)
+import Internal exposing (ID(..), Dict(..))
 import Dict
 
 import Json.Encode as E

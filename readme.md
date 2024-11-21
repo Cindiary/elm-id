@@ -3,12 +3,13 @@ Elm ID is a library for making opaque ID types that can be used in dictionaries.
 ## Example
 
 ```elm
-module User exposing(User, ID, newCounter)
+module User exposing (User, ID, newCounter, newUser)
 
 import ID
 import ID.Counter
 
-type alias ID = ID.ID IDInternal
+type alias ID =
+    ID.ID IDInternal
 
 type IDInternal
     = IDInternal

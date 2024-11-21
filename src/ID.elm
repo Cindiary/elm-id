@@ -52,11 +52,11 @@ type alias Counter id = ID.Counter.Counter id
 
 
 {-| Alias for [`ID.Dict.Dict`](ID.Dict#Dict) -}
-type alias Dict counter id value = ID.Dict.Dict counter id value
+type alias Dict id value = ID.Dict.Dict id value
 
 
 {-| Alias for [`ID.Set.Set`](ID.Set#Set) -}
-type alias Set counter id = ID.Set.Set counter id
+type alias Set id = ID.Set.Set id
 
 {-| Alias for [`ID.CounterDict.CounterDict`](ID.CounterDict#CounterDict) -}
 type alias CounterDict id value = ID.CounterDict.CounterDict id value
