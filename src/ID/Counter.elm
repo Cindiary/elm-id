@@ -21,12 +21,12 @@ module ID.Counter exposing
 @docs accountForIDs, accountForItemIDs, accountForDictIDs
 @docs sanitizeIDs
 
-#Json
+# Json
 @docs encode, decoder
 
 -}
 
-import Internal exposing(ID(..), unpack)
+import Internal exposing(ID(..), Counter(..), unpack)
 import ID.Dict
 import ID.Set
 import Dict
@@ -40,20 +40,19 @@ import Json.Decode as D
 {-|
 Counter type which is used to create [`ID`](ID#ID) values
 -}
-type Counter id
-    = IDCounter Int
+type alias Counter id = Internal.Counter id
 
 
 {-| Create a new counter -}
 new : a -> Counter (ID a)
-new _ =
-    IDCounter 0
+new =
+    Internal.newCounter
 
 
 {-|  Creates a new [`ID`](ID#ID) and advanced the counter, make sure to use the new counter to create any new IDs -}
 newID : Counter (ID a) -> ( ID a, Counter (ID a) )
-newID (IDCounter nextID) =
-    ( ID nextID, IDCounter (nextID + 1) )
+newID =
+    Internal.newID
 
 
 {-| Same as [`newID`](ID.Counter#newID) but creates 2 [`ID`](ID#ID)s instead of 1 -}
@@ -88,7 +87,7 @@ newID4 (IDCounter nextID) =
     )
 
 
-{-| Asign [`ID`](ID#ID)s to a number of values, make sure to use the new counter to create any new IDs -}
+{-| Assign [`ID`](ID#ID)s to a number of values, make sure to use the new counter to create any new IDs -}
 giveIDs : (ID a -> b -> c) -> Counter (ID a) -> List b -> ( List c, Counter (ID a) )
 giveIDs func (IDCounter nextID) items =
     ( List.indexedMap (\i item -> func (ID (nextID + i)) item) items, IDCounter (nextID + List.length items) )
@@ -118,8 +117,8 @@ accountForItemIDs getID items counter =
 
 
 {-| Same as [`accountForIDs`](ID.Counter#accountForIDs) but can be used with a [`Dict`](ID.Dict#Dict) -}
-accountForDictIDs : ID.Dict.Dict (ID a) value -> Counter (ID a) -> Counter (ID a)
-accountForDictIDs ( Internal.IDDict dict ) counter =
+accountForDictIDs : ID.Dict.Dict counter (ID a) value -> Counter (ID a) -> Counter (ID a)
+accountForDictIDs ( Internal.IDDict _ dict ) counter =
     Dict.keys dict
     |> accountForIDvalues counter
 

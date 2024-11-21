@@ -35,7 +35,7 @@ module ID.Dict exposing
 @docs partition
 @docs diff, intersect, union
 
-#Json
+# Json
 @docs encode, decoder
 -}
 
@@ -44,73 +44,75 @@ import Dict
 
 import Json.Encode as E
 import Json.Decode as D
+import Internal exposing (Counter(..))
 
 
 {-| A [`Dict`](https://package.elm-lang.org/packages/elm/core/latest/Dict#Dict) for [`ID`](ID#ID)s -}
-type alias Dict id value = Internal.Dict id value
+type alias Dict counter id value = Internal.Dict counter id value
 
 
-{-| Same as [`Dict.empty`](https://package.elm-lang.org/packages/elm/core/latest/Dict#empty) -}
-empty : Dict (ID a) value
+{-| Create a empty `Dict` without a counter -}
+empty : Dict () (ID a) value
 empty =
-    IDDict Dict.empty
+    IDDict () Dict.empty
 
 
-unpackDict : Dict (ID a) value -> Dict.Dict Int value
-unpackDict (IDDict dict) =
+unpackDict : Dict counter (ID a) value -> Dict.Dict Int value
+unpackDict (IDDict _ dict) =
     dict
 
 
 {-| Same as [`Dict.isEmpty`](https://package.elm-lang.org/packages/elm/core/latest/Dict#isEmpty) -}
-isEmpty : Dict (ID a) value -> Bool
+isEmpty : Dict counter (ID a) value -> Bool
 isEmpty =
     Dict.isEmpty << unpackDict
 
 
 {-| Same as [`Dict.size`](https://package.elm-lang.org/packages/elm/core/latest/Dict#size) -}
-size : Dict (ID a) value -> Int
+size : Dict counter (ID a) value -> Int
 size =
     Dict.size << unpackDict
 
 
 {-| Same as [`Dict.fromList`](https://package.elm-lang.org/packages/elm/core/latest/Dict#fromList) -}
-fromList : List ( ID a, value ) -> Dict (ID a) value
+fromList : List ( ID a, value ) -> Dict () (ID a) value
 fromList list =
-    IDDict ( Dict.fromList ( List.map ( Tuple.mapFirst unpack ) list ) )
+    IDDict () ( Dict.fromList ( List.map ( Tuple.mapFirst unpack ) list ) )
 
 
 {-| Same as [`Dict.member`](https://package.elm-lang.org/packages/elm/core/latest/Dict#member) -}
-member : ID a -> Dict (ID a) value -> Bool
-member id (IDDict dict) =
+member : ID a -> Dict counter (ID a) value -> Bool
+member id (IDDict _ dict) =
     Dict.member (unpack id) dict
 
 
 {-| Same as [`Dict.get`](https://package.elm-lang.org/packages/elm/core/latest/Dict#get) -}
-get : ID a -> Dict (ID a) value -> Maybe value
-get id (IDDict dict) =
+get : ID a -> Dict counter (ID a) value -> Maybe value
+get id (IDDict _ dict) =
     Dict.get (unpack id) dict
 
 
 {-| Same as [`get`](ID.Dict#get) but with the arguments swapped, useful for pipelines -}
-getFrom : Dict (ID a) value -> ID a -> Maybe value
+getFrom : Dict counter (ID a) value -> ID a -> Maybe value
 getFrom dict id =
     get id dict
 
 
 {-| Same as [`Dict.insert`](https://package.elm-lang.org/packages/elm/core/latest/Dict#insert) -}
-insert : ID a -> value -> Dict (ID a) value -> Dict (ID a) value
-insert id value (IDDict dict) =
-    IDDict (Dict.insert (unpack id) value dict)
+insert : ID a -> value -> Dict counter (ID a) value -> Dict counter (ID a) value
+insert id value (IDDict counter dict) =
+    IDDict counter (Dict.insert (unpack id) value dict)
+
 
 
 {-| Same as [`Dict.remove`](https://package.elm-lang.org/packages/elm/core/latest/Dict#remove) -}
-remove : ID a -> Dict (ID a) value -> Dict (ID a) value
-remove id (IDDict dict) =
-    IDDict (Dict.remove (unpack id) dict)
+remove : ID a -> Dict counter (ID a) value -> Dict counter (ID a) value
+remove id (IDDict counter dict) =
+    IDDict counter (Dict.remove (unpack id) dict)
 
 
 {-| Same as [`Dict.update`](https://package.elm-lang.org/packages/elm/core/latest/Dict#update) but does not operate on Maybe values -}
-update : ID a -> (value -> value) -> Dict (ID a) value -> Dict (ID a) value
+update : ID a -> (value -> value) -> Dict counter (ID a) value -> Dict counter (ID a) value
 update id func dict =
     case get id dict of
         Just value ->
@@ -127,20 +129,20 @@ mapFunc func k v =
 
 
 {-| Same as [`Dict.map`](https://package.elm-lang.org/packages/elm/core/latest/Dict#map) -}
-map : (ID a -> b -> c) -> Dict (ID a) b -> Dict (ID a) c
-map func (IDDict dict) =
-    IDDict (Dict.map (mapFunc func) dict)
+map : (ID a -> b -> c) -> Dict counter (ID a) b -> Dict counter (ID a) c
+map func (IDDict counter dict) =
+    IDDict counter (Dict.map (mapFunc func) dict)
 
 
 {-| Same as [`Dict.filter`](https://package.elm-lang.org/packages/elm/core/latest/Dict#filter) -}
-filter : (ID a -> value -> Bool) -> Dict (ID a) value -> Dict (ID a) value
-filter predicate (IDDict dict) =
-    IDDict (Dict.filter (mapFunc predicate) dict)
+filter : (ID a -> value -> Bool) -> Dict counter (ID a) value -> Dict counter (ID a) value
+filter predicate (IDDict counter dict) =
+    IDDict counter (Dict.filter (mapFunc predicate) dict)
 
 
 {-| Same as [`List.filterMap`](https://package.elm-lang.org/packages/elm/core/latest/List#filterMap) but for Dicts -}
-filterMap : (ID a -> b -> Maybe c) -> Dict (ID a) b -> Dict (ID a) c
-filterMap func dict =
+filterMap : (ID a -> b -> Maybe c) -> Dict counter (ID a) b -> Dict counter (ID a) c
+filterMap func ( IDDict counter _ as dict ) =
     let
         foldFunc id val newDict =
             case func id val of
@@ -150,85 +152,66 @@ filterMap func dict =
                 Nothing ->
                     newDict
     in
-    fold foldFunc empty dict
+    fold foldFunc ( IDDict counter Dict.empty ) dict
 
 
 {-| Same as [`Dict.foldl`](https://package.elm-lang.org/packages/elm/core/latest/Dict#foldl) -}
-fold : (ID a -> value -> c -> c) -> c -> Dict (ID a) value -> c
-fold func start (IDDict dict) =
+fold : (ID a -> value -> c -> c) -> c -> Dict counter (ID a) value -> c
+fold func start (IDDict _ dict) =
     Dict.foldl (mapFunc func) start dict
 
 
 {-| Same as [`Dict.keys`](https://package.elm-lang.org/packages/elm/core/latest/Dict#keys) -}
-ids : Dict (ID a) value -> List (ID a)
-ids (IDDict dict) =
+ids : Dict counter (ID a) value -> List (ID a)
+ids (IDDict _ dict) =
     Dict.foldr (\key _ idList -> ID key :: idList) [] dict
 
 
 {-| Same as [`Dict.values`](https://package.elm-lang.org/packages/elm/core/latest/Dict#values) -}
-values : Dict (ID a) value -> List value
-values (IDDict dict) =
+values : Dict counter (ID a) value -> List value
+values (IDDict _ dict) =
     Dict.values dict
 
 
 {-| Same as [`Dict.toList`](https://package.elm-lang.org/packages/elm/core/latest/Dict#toList) -}
-toList : Dict (ID a) value -> List ( ID a, value )
-toList (IDDict dict) =
+toList : Dict counter (ID a) value -> List ( ID a, value )
+toList (IDDict _ dict) =
     Dict.foldr (\key value list -> ( ID key, value ) :: list) [] dict
 
 
 {-| Same as [`Dict.partition`](https://package.elm-lang.org/packages/elm/core/latest/Dict#partition) -}
-partition : (ID a -> value -> Bool) -> Dict (ID a) value -> ( Dict (ID a) value, Dict (ID a) value )
-partition test (IDDict dict) =
+partition : (ID a -> value -> Bool) -> Dict counter (ID a) value -> ( Dict () (ID a) value, Dict () (ID a) value )
+partition test (IDDict _ dict) =
     Dict.partition (mapFunc test) dict
-    |> Tuple.mapBoth ( IDDict ) ( IDDict )
+    |> Tuple.mapBoth ( IDDict () ) ( IDDict () )
 
 
 {-| Same as [`Dict.diff`](https://package.elm-lang.org/packages/elm/core/latest/Dict#diff) -}
-diff : Dict (ID a) b -> Dict (ID a) c -> Dict (ID a) b
-diff (IDDict dict1) (IDDict dict2) =
-    IDDict (Dict.diff dict1 dict2)
+diff : Dict counter1 (ID a) b -> Dict counter2 (ID a) c -> Dict counter1 (ID a) b
+diff (IDDict counter dict1) (IDDict _ dict2) =
+    IDDict counter (Dict.diff dict1 dict2)
 
 {-| Same as [`Dict.intersect`](https://package.elm-lang.org/packages/elm/core/latest/Dict#intersect), but can accept dictionaries with different value types -}
-intersect : Dict (ID a) b -> Dict (ID a) c -> Dict (ID a) b
+intersect : Dict counter1 (ID a) b -> Dict counter2 (ID a) c -> Dict counter1 (ID a) b
 intersect dict1 dict2 =
     filter (\k _ -> member k dict2) dict1
 
 
 {-| Same as [`Dict.union`](https://package.elm-lang.org/packages/elm/core/latest/Dict#union) -}
-union : Dict (ID a) value -> Dict (ID a) value -> Dict (ID a) value
-union (IDDict dict1) (IDDict dict2) =
-    IDDict (Dict.union dict1 dict2)
+union : Dict counter1 (ID a) value -> Dict counter2 (ID a) value -> Dict () (ID a) value
+union (IDDict _ dict1) (IDDict _ dict2) =
+    IDDict () (Dict.union dict1 dict2)
 
 
-{-| Encode a `Dict` to a JSON value -}
-encode : ( value -> E.Value ) -> Dict id value -> E.Value
-encode encodeValue (IDDict dict) =
-    Dict.toList dict
-    |> List.map ( Tuple.mapBoth String.fromInt encodeValue )
+{-| Encode a `Dict ()` to a JSON value -}
+encode : ( value -> E.Value ) -> Dict () id value -> E.Value
+encode encodeValue dict =
+    Internal.encodeDictFields encodeValue dict
     |> E.object
 
 
-{-| JSON Decoder for `Dict` -}
-decoder : D.Decoder value -> D.Decoder ( Dict id value )
-decoder valueDecoder =
-    let
-        fromPairs pairs =
-            case pairs of
-                ( key, value ) :: ls ->
-                    case String.toInt key of
-                        Just id ->
-                            D.map
-                            ( Dict.insert id value )
-                            ( fromPairs ls )
-
-                        Nothing ->
-                            D.fail ( "Invalid id: \"" ++ key ++ "\"" )
-                
-                [] ->
-                    D.succeed Dict.empty
-    in
-    D.keyValuePairs valueDecoder
-    |> D.andThen fromPairs
-    |> D.map IDDict
+{-| JSON Decoder for `Dict ()` -}
+decoder : D.Decoder value -> D.Decoder ( Dict () id value )
+decoder =
+    Internal.dictDecoder ( D.succeed () )
 

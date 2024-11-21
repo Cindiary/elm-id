@@ -26,9 +26,9 @@ newCounter =
 
 newUser : ID.Counter -> String -> ( ID.Counter, User )
 newUser counter name =
-  let
-    ( id, newCounter ) = ID.Counter.newID counter
-  in
-  ( newCounter, { id = id, name = name } )
+    let
+        ( id, newCounter ) = ID.Counter.newID counter
+    in
+    ( newCounter, { id = id, name = name } )
 
-```
+```elm

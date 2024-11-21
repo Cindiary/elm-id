@@ -1,15 +1,15 @@
-
 {
     "type": "package",
     "name": "Cindiary/elm-id",
     "summary": "Basic opaque ID type",
     "license": "BSD-3-Clause",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "exposed-modules": [
         "ID",
         "ID.Counter",
         "ID.Dict",
-        "ID.Set"
+        "ID.Set",
+        "ID.CounterDict"
     ],
     "elm-version": "0.19.0 <= v < 0.20.0",
     "dependencies": {

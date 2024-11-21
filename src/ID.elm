@@ -3,6 +3,7 @@ module ID exposing
     , Counter
     , Dict
     , Set
+    , CounterDict
     , toString
     , debugID
     , encode
@@ -12,21 +13,22 @@ module ID exposing
 {-|
 Module in which the base ID type is defined
 
-#Types
-@docs ID, Counter, Dict, Set
+# Types
+@docs ID, Counter, Dict, Set, CounterDict
 
-#Functions
+# Functions
 @docs toString, debugID
 
-#Json
+# Json
 @docs encode, decoder
 -}
 
 import Internal exposing(ID(..))
 
+import ID.Counter
 import ID.Dict
 import ID.Set
-import ID.Counter
+import ID.CounterDict
 
 import Json.Encode as E
 import Json.Decode as D
@@ -41,7 +43,6 @@ import Json.Decode as D
     type alias ID = ID.ID IDInternal
 
     type IDInternal = IDInternal
-
 -}
 type alias ID a = Internal.ID a
 
@@ -51,11 +52,14 @@ type alias Counter id = ID.Counter.Counter id
 
 
 {-| Alias for [`ID.Dict.Dict`](ID.Dict#Dict) -}
-type alias Dict id value = ID.Dict.Dict id value
+type alias Dict counter id value = ID.Dict.Dict counter id value
 
 
 {-| Alias for [`ID.Set.Set`](ID.Set#Set) -}
-type alias Set id = ID.Set.Set id
+type alias Set counter id = ID.Set.Set counter id
+
+{-| Alias for [`ID.CounterDict.CounterDict`](ID.CounterDict#CounterDict) -}
+type alias CounterDict id value = ID.CounterDict.CounterDict id value
 
 
 {-| Converts an ID into a string representing the number inside the ID -}
