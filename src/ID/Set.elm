@@ -8,6 +8,7 @@ module ID.Set exposing
     , member
     , insert
     , remove
+    , filter
     , fold
     , diff
     , intersect
@@ -25,7 +26,7 @@ module ID.Set exposing
 
 @docs insert, remove
 
-@docs fold
+@docs filter, fold
 
 @docs diff, intersect, union
 
@@ -92,6 +93,12 @@ insert id set =
 remove : ID a -> Set (ID a) -> Set (ID a)
 remove =
     ID.Dict.remove
+
+
+{-| Alias for [`ID.Dict.filter`](ID.Dict#filter) -}
+filter : ( ID a -> Bool ) -> Set (ID a) -> Set (ID a)
+filter predicate =
+    ID.Dict.filter ( \id () -> predicate id )
 
 
 {-| Alias for [`ID.Dict.fold`](ID.Dict#fold) but without a value argument -}

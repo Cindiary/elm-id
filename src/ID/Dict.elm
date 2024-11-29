@@ -12,6 +12,7 @@ module ID.Dict exposing
     , remove
     , update
     , map
+    , filter
     , filterMap
     , fold
     , ids
@@ -30,7 +31,7 @@ module ID.Dict exposing
 @docs empty, fromList, toList
 @docs isEmpty, size
 @docs member, get, getFrom, insert, remove, update
-@docs map, filterMap, fold
+@docs map, filter, filterMap, fold
 @docs ids, values
 @docs partition
 @docs diff, intersect, union
