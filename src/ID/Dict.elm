@@ -206,13 +206,32 @@ union (IDDict _ dict1) (IDDict _ dict2) =
 
 {-| Encode a [`Dict`](ID.Dict#Dict) to a JSON value -}
 encode : ( value -> E.Value ) -> Dict id value -> E.Value
-encode encodeValue dict =
-    Internal.encodeDictFields encodeValue dict
+encode encodeValue ( IDDict _ dict ) =
+    Dict.toList dict
+    |> List.map ( Tuple.mapBoth String.fromInt encodeValue )
     |> E.object
 
 
 {-| JSON Decoder for [`Dict`](ID.Dict#Dict) -}
 decoder : D.Decoder value -> D.Decoder ( Dict id value )
-decoder =
-    Internal.dictDecoder ( D.succeed () )
+decoder valueDecoder =
+    let
+        fromPairs pairs =
+            case pairs of
+                ( key, value ) :: ls ->
+                    case String.toInt key of
+                        Just id ->
+                            D.map
+                            ( Dict.insert id value )
+                            ( fromPairs ls )
+
+                        Nothing ->
+                            D.fail ( "Invalid id: \"" ++ key ++ "\"" )
+                
+                [] ->
+                    D.succeed Dict.empty
+    in
+    D.keyValuePairs valueDecoder
+    |> D.andThen fromPairs
+    |> D.map ( IDDict () )
 

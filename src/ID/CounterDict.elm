@@ -23,6 +23,7 @@ import Dict
 import Json.Encode as E
 import Json.Decode as D
 import Internal exposing (Counter(..))
+import ID.Dict
 
 
 
@@ -45,22 +46,25 @@ fromList _ list =
 {-| Insert a value with a new [`ID`](ID#ID) into the Dictionary -}
 insert : value -> CounterDict (ID a) value -> ( ID a, CounterDict (ID a) value )
 insert value ( IDDict counter dict ) =
-  let
-    ( ID idValue as id, newCounter ) = Internal.newID counter
-  in
-  ( id, IDDict newCounter ( Dict.insert idValue value dict ) )
+    let
+        ( ID idValue as id, newCounter ) = Internal.newID counter
+    in
+    ( id, IDDict newCounter ( Dict.insert idValue value dict ) )
 
 
 {-| Encode `CounterDict` to a JSON value -}
 encode : ( value -> D.Value ) -> CounterDict id value -> E.Value
-encode encodeValue ( IDDict ( IDCounter counter ) _ as dict ) =
-    Internal.encodeDictFields encodeValue dict
-    |> (::) ( "counter", E.int counter )
-    |> E.object
+encode encodeValue ( IDDict ( IDCounter counter ) dict ) =
+    E.object
+    [ ( "counter", E.int counter )
+    , ( "values", ID.Dict.encode encodeValue ( IDDict () dict ) )
+    ]
 
 
 {-| JSON Decoder for `SetCounterDict -}
 decoder : D.Decoder value -> D.Decoder ( CounterDict id value )
-decoder =
-    Internal.dictDecoder ( D.field "counter" ( D.map IDCounter D.int ) )
+decoder valueDecoder =
+    D.map2 ( \counter ( IDDict () dict ) -> IDDict counter dict )
+    ( D.field "counter" ( D.map IDCounter D.int ) )
+    ( D.field "values" ( ID.Dict.decoder valueDecoder ) )
 
