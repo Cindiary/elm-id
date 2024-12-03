@@ -40,6 +40,9 @@ dictDecoder counterDecoder valueDecoder =
     let
         fromPairs pairs =
             case pairs of
+                ( "counter", _ ) :: ls ->
+                    fromPairs ls
+                
                 ( key, value ) :: ls ->
                     case String.toInt key of
                         Just id ->
