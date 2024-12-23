@@ -6,6 +6,7 @@ module ID exposing
     , CounterDict
     , toString
     , debugID
+    , parser
     , encode
     , decoder
     )
@@ -18,6 +19,9 @@ Module in which the base ID type is defined
 
 # Functions
 @docs toString, debugID
+
+# Parser
+@docs parser
 
 # Json
 @docs encode, decoder
@@ -32,6 +36,7 @@ import ID.CounterDict
 
 import Json.Encode as E
 import Json.Decode as D
+import Parser
 
 
 {-| The basis for making a ID type, has one generic type argument which should be an internal type to the module the ID type is defined in.
@@ -72,6 +77,12 @@ toString ( ID id ) =
 debugID : (String -> Never) -> Int -> ID a
 debugID _ num =
     ID num
+
+
+{-| Parser for 'ID' -}
+parser : Parser.Parser ( ID a )
+parser =
+    Parser.map ID Parser.int
 
 
 {-| Encode `ID` to a JSON value -}
