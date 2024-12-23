@@ -3,7 +3,7 @@
     "name": "Cindiary/elm-id",
     "summary": "Basic opaque ID type",
     "license": "BSD-3-Clause",
-    "version": "3.1.2",
+    "version": "4.0.0",
     "exposed-modules": [
         "ID",
         "ID.Counter",
