@@ -34,13 +34,12 @@ module ID.Set exposing
 @docs encode, decoder
 -}
 
-import Internal exposing (ID(..))
+import Internal exposing (ID, unpackDict)
 import ID.Dict
 import Dict
 
 import Json.Encode as E
 import Json.Decode as D
-import Internal exposing (Dict(..))
 
 {-| A set type for IDs, is equal to a [`ID.Dict`](ID.Dict#Dict) with empty tuples as values -}
 type alias Set id =
@@ -103,8 +102,8 @@ filter predicate =
 
 {-| Alias for [`ID.Dict.fold`](ID.Dict#fold) but without a value argument -}
 fold : (ID a -> c -> c) -> c -> Set (ID a) -> c
-fold func start ( IDDict _ dict ) =
-    Dict.foldl ( \id _ acc -> func ( ID id ) acc ) start dict
+fold func start set =
+    Dict.foldl ( \id _ acc -> func ( Internal.ID id ) acc ) start ( unpackDict set )
 
 
 {-| Alias for [`ID.Dict.diff`](ID.Dict#diff) -}
@@ -127,8 +126,8 @@ union =
 
 {-| Encode [`Set`](ID.Set#Set) to a JSON value -}
 encode : Set id -> E.Value
-encode ( IDDict _ set ) =
-    Dict.keys set
+encode set =
+    Dict.keys ( unpackDict set )
     |> E.list E.int
 
 
@@ -136,4 +135,4 @@ encode ( IDDict _ set ) =
 decoder : D.Decoder ( Set id )
 decoder =
     D.list D.int
-    |> D.map ( \ids_ -> IDDict () ( Dict.fromList ( List.map ( \id -> ( id, () ) ) ids_ ) ) )
+    |> D.map ( \ids_ -> Internal.WithoutCounter () ( Dict.fromList ( List.map ( \id -> ( id, () ) ) ids_ ) ) )

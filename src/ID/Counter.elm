@@ -6,6 +6,7 @@ module ID.Counter exposing
     , newID3
     , newID4
     , giveIDs
+    , accountForID
     , accountForIDs
     , accountForItemIDs
     , accountForDictIDs
@@ -18,7 +19,7 @@ module ID.Counter exposing
 
 @docs Counter
 @docs new, newID, newID2, newID3, newID4, giveIDs
-@docs accountForIDs, accountForItemIDs, accountForDictIDs
+@docs accountForID, accountForIDs, accountForItemIDs, accountForDictIDs
 @docs sanitizeIDs
 
 # Json
@@ -40,19 +41,20 @@ import Json.Decode as D
 {-|
 Counter type which is used to create [`ID`](ID#ID) values
 -}
+
 type alias Counter id = Internal.Counter id
 
 
 {-| Create a new counter -}
 new : a -> Counter (ID a)
-new =
-    Internal.newCounter
+new _ =
+    IDCounter 0
 
 
 {-|  Creates a new [`ID`](ID#ID) and advanced the counter, make sure to use the new counter to create any new IDs -}
 newID : Counter (ID a) -> ( ID a, Counter (ID a) )
-newID =
-    Internal.newID
+newID (IDCounter nextID) =
+    ( ID nextID, IDCounter (nextID + 1) )
 
 
 {-| Same as [`newID`](ID.Counter#newID) but creates 2 IDs instead of 1 -}
@@ -94,14 +96,32 @@ giveIDs func (IDCounter nextID) items =
 
 
 {-|
+Account for a single IDs.
+This should not be necessary if you always make sure to use the counter result from [`newID`](ID.Counter#newID), but can be used to sanitize the counter after encoding and decoding a counter and values
+-}
+accountForID : ID a -> Counter (ID a) -> Counter (ID a)
+accountForID =
+    Internal.accountForID
+
+
+idMax : ID a -> ID a -> ID a
+idMax id1 id2 =
+    if unpack id1 > unpack id2 then
+        id1
+    else
+        id2
+
+
+{-|
 Account for a list of IDs.
 This should not be necessary if you always make sure to use the counter result from [`newID`](ID.Counter#newID), but can be used to sanitize the counter after encoding and decoding a counter and values
 -}
 accountForIDs : List (ID a) -> Counter (ID a) -> Counter (ID a)
 accountForIDs ids counter =
-    ids
-    |> List.map unpack
-    |> accountForIDvalues counter
+    let
+        maxID = List.foldl idMax ( ID -1 ) ids
+    in
+    accountForID maxID counter
 
 
 {-|
@@ -111,29 +131,20 @@ Same as [`accountForIDs`](ID.Counter#accountForIDs) but can be used for a list o
 -}
 accountForItemIDs : (item -> ID a) -> List item -> Counter (ID a) -> Counter (ID a)
 accountForItemIDs getID items counter =
-    items
-    |> List.map (getID >> unpack)
-    |> accountForIDvalues counter
+    let
+        maxID = List.foldl ( getID >> idMax ) ( ID -1 ) items
+    in
+    accountForID maxID counter
 
 
 {-| Same as [`accountForIDs`](ID.Counter#accountForIDs) but can be used with a [`Dict`](ID.Dict#Dict) -}
 accountForDictIDs : Internal.Dict counter (ID a) value -> Counter (ID a) -> Counter (ID a)
-accountForDictIDs ( Internal.IDDict _ dict ) counter =
-    Dict.keys dict
-    |> accountForIDvalues counter
-
-
-accountForIDvalues : Counter (ID a) -> List Int -> Counter (ID a)
-accountForIDvalues ((IDCounter currentValue) as counter) values =
-    case List.maximum values of
-        Just maxID ->
-            if currentValue <= maxID then
-                IDCounter (maxID + 10)
-            else
-                counter
-
-        Nothing ->
-            counter
+accountForDictIDs dict counter =
+    let
+        fold id _ res = max id res
+        maxID = Dict.foldl fold -1 ( Internal.unpackDict dict )
+    in
+    accountForID ( ID maxID ) counter
 
 
 {-| Account for all used IDs in the counter (as in [`accountForIDs`](ID.Counter#accountForIDs)) and give new IDs to any items that have a duplicate [`ID`](ID#ID) -}
