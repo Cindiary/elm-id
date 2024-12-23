@@ -28,7 +28,6 @@ module ID.Counter exposing
 -}
 
 import Internal exposing(ID(..), Counter(..), unpack)
-import ID.Dict
 import ID.Set
 import Dict
 

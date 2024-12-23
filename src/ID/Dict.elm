@@ -1,6 +1,7 @@
 module ID.Dict exposing
     ( Dict
     , empty
+    , singleton
     , fromList
     , toList
     , isEmpty
@@ -31,7 +32,7 @@ module ID.Dict exposing
 {-|
 @docs Dict
 
-@docs empty, fromList, toList
+@docs empty, singleton, fromList, toList
 @docs isEmpty, size
 @docs member, get, getFrom
 @docs insert, remove, update
@@ -53,7 +54,7 @@ import Json.Decode as D
 import Internal
 
 
-{-| A [`Dict`](https://package.elm-lang.org/packages/elm/core/latest/Dict#Dict) for [`ID`](ID#ID), value pairs -}
+{-| A [`Dict`](https://package.elm-lang.org/packages/elm/core/latest/Dict#Dict) for [`ID`](ID#ID)-value pairs -}
 type alias Dict id value = Internal.Dict () id value
 
 
@@ -63,48 +64,54 @@ empty =
     pack Dict.empty
 
 
-pack : Dict.Dict Int value -> Dict id value
-pack =
-    WithoutCounter ()
+{-| Create a dictionary with a single ID-value pair -}
+singleton : ID a -> value -> Dict (ID a) value
+singleton id value =
+    insert id value empty
 
 
-{-| Same as [`Dict.isEmpty`](https://package.elm-lang.org/packages/elm/core/latest/Dict#isEmpty) -}
-isEmpty : Internal.Dict counter (ID a) value -> Bool
-isEmpty =
-    Dict.isEmpty << unpackDict
-
-
-{-| Same as [`Dict.size`](https://package.elm-lang.org/packages/elm/core/latest/Dict#size) -}
-size : Internal.Dict counter (ID a) value -> Int
-size =
-    Dict.size << unpackDict
-
-
-{-| Same as [`Dict.fromList`](https://package.elm-lang.org/packages/elm/core/latest/Dict#fromList) -}
+{-| Convert an list of ID-value pairs into a dictionary. -}
 fromList : List ( ID a, value ) -> Dict (ID a) value
 fromList list =
     pack ( Dict.fromList ( List.map ( Tuple.mapFirst unpack ) list ) )
 
 
-{-| Same as [`Dict.member`](https://package.elm-lang.org/packages/elm/core/latest/Dict#member) -}
+pack : Dict.Dict Int value -> Dict id value
+pack =
+    WithoutCounter ()
+
+
+{-| Determine if a dictionary is empty. -}
+isEmpty : Internal.Dict counter (ID a) value -> Bool
+isEmpty =
+    Dict.isEmpty << unpackDict
+
+
+{-| Determine the number of ID-value pairs in the dictionary. -}
+size : Internal.Dict counter (ID a) value -> Int
+size =
+    Dict.size << unpackDict
+
+
+{-| Determine if a ID is in a dictionary. -}
 member : ID a -> Internal.Dict counter (ID a) value -> Bool
 member id dict =
     Dict.member (unpack id) (unpackDict dict)
 
 
-{-| Same as [`Dict.get`](https://package.elm-lang.org/packages/elm/core/latest/Dict#get) -}
+{-| Get the value associated with a ID. If the ID is not found, return Nothing. -}
 get : ID a -> Internal.Dict counter (ID a) value -> Maybe value
 get id dict =
     Dict.get (unpack id) (unpackDict dict)
 
 
-{-| Same as [get](ID.Dict#get) but with the arguments swapped, useful for pipelines -}
+{-| Same as [get](ID.Dict#get) but with the arguments swapped, useful for pipelines. -}
 getFrom : Internal.Dict counter (ID a) value -> ID a -> Maybe value
 getFrom dict id =
     get id dict
 
 
-{-| Same as [`Dict.insert`](https://package.elm-lang.org/packages/elm/core/latest/Dict#insert) -}
+{-| Insert a ID-value pair into a dictionary. Replaces value when there is a collision. -}
 insert : ID a -> value -> Internal.Dict counter (ID a) value -> Internal.Dict counter (ID a) value
 insert id value dict =
     case dict of
@@ -116,13 +123,13 @@ insert id value dict =
 
 
 
-{-| Same as [`Dict.remove`](https://package.elm-lang.org/packages/elm/core/latest/Dict#remove) -}
+{-| Remove a ID-value pair from a dictionary. If the ID is not found, no changes are made. -}
 remove : ID a -> Internal.Dict counter (ID a) value -> Internal.Dict counter (ID a) value
 remove id dict =
     packDict dict (Dict.remove (unpack id) (unpackDict dict))
 
 
-{-| Same as [`Dict.update`](https://package.elm-lang.org/packages/elm/core/latest/Dict#update) but does not operate on Maybe values -}
+{-| Update the value of a dictionary for a specific ID with a given function. If the ID is not found, no changes are made. -}
 update : ID a -> (value -> value) -> Internal.Dict counter (ID a) value -> Internal.Dict counter (ID a) value
 update id func dict =
     case get id dict of
@@ -133,19 +140,18 @@ update id func dict =
             dict
 
 
-{-| Same as [`Dict.mapFunc`](https://package.elm-lang.org/packages/elm/core/latest/Dict#mapFunc) -}
 mapFunc : (ID a -> b -> c) -> (Int -> b -> c)
 mapFunc func k v =
     func (ID k) v
 
 
-{-| Same as [`Dict.map`](https://package.elm-lang.org/packages/elm/core/latest/Dict#map) -}
+{-| Apply a function to all values in a dictionary. -}
 map : (ID a -> b -> c) -> Internal.Dict counter (ID a) b -> Internal.Dict counter (ID a) c
 map func =
     mapDict (Dict.map (mapFunc func))
 
 
-{-| Apply a function to values that appear in both dictionaries and create a new dictionary with the results, values that only appear in one dictionary are skipped -}
+{-| Apply a function to values that appear in both dictionaries and create a new dictionary with the results, values that don't appear in all dictionaries are skipped. -}
 map2 : (ID a -> b -> c -> d) -> Internal.Dict c1 (ID a) b -> Internal.Dict c2 (ID a) c -> Dict (ID a) d
 map2 func dict1 dict2 =
     let
@@ -193,13 +199,13 @@ map4 func dict1 dict2 dict3 dict4 =
     fold foldFunc empty dict1
 
 
-{-| Same as [`Dict.filter`](https://package.elm-lang.org/packages/elm/core/latest/Dict#filter) -}
+{-| Keep only the ID-value pairs that pass the given test. -}
 filter : (ID a -> value -> Bool) -> Internal.Dict counter (ID a) value -> Internal.Dict counter (ID a) value
 filter predicate =
     mapDict (Dict.filter (mapFunc predicate))
 
 
-{-| Same as [`List.filterMap`](https://package.elm-lang.org/packages/elm/core/latest/List#filterMap) but for Dicts -}
+{-| Apply a function to all values in the dictionary and filter out the values that return Nothing. -}
 filterMap : (ID a -> b -> Maybe c) -> Internal.Dict counter (ID a) b -> Internal.Dict counter (ID a) c
 filterMap func dict =
     let
@@ -215,50 +221,51 @@ filterMap func dict =
     |> packDict dict
 
 
-{-| Same as [`Dict.foldl`](https://package.elm-lang.org/packages/elm/core/latest/Dict#foldl) -}
+{-| Fold over the ID-value pairs in a dictionary from lowest ID to highest ID. -}
 fold : (ID a -> value -> c -> c) -> c -> Internal.Dict counter (ID a) value -> c
 fold func start dict =
     Dict.foldl (mapFunc func) start (unpackDict dict)
 
 
-{-| Same as [`Dict.keys`](https://package.elm-lang.org/packages/elm/core/latest/Dict#keys) -}
+{-| Get all of the IDs in a dictionary, sorted from lowest to highest. -}
 ids : Internal.Dict counter (ID a) value -> List (ID a)
 ids dict =
-    Dict.foldr (\key _ idList -> ID key :: idList) [] (unpackDict dict)
+    Dict.foldr (\idValue _ idList -> ID idValue :: idList) [] (unpackDict dict)
 
 
-{-| Same as [`Dict.values`](https://package.elm-lang.org/packages/elm/core/latest/Dict#values) -}
+{-| Get all of the values in a dictionary, in the order of their IDs. -}
 values : Internal.Dict counter (ID a) value -> List value
 values dict =
     Dict.values (unpackDict dict)
 
 
-{-| Same as [`Dict.toList`](https://package.elm-lang.org/packages/elm/core/latest/Dict#toList) -}
+{-| Convert a dictionary into an list of ID-value pairs, sorted by IDs. -}
 toList : Internal.Dict counter (ID a) value -> List ( ID a, value )
 toList dict =
-    Dict.foldr (\key value list -> ( ID key, value ) :: list) [] (unpackDict dict)
+    Dict.foldr (\idValue value list -> ( ID idValue, value ) :: list) [] (unpackDict dict)
 
 
-{-| Same as [`Dict.partition`](https://package.elm-lang.org/packages/elm/core/latest/Dict#partition) -}
+{-| Partition a dictionary according to some test. The first dictionary contains all ID-value pairs which passed the test, and the second contains the pairs that did not. -}
 partition : (ID a -> value -> Bool) -> Internal.Dict counter (ID a) value -> ( Dict (ID a) value, Dict (ID a) value )
 partition test dict =
     Dict.partition (mapFunc test) (unpackDict dict)
     |> Tuple.mapBoth pack pack
 
 
-{-| Same as [`Dict.diff`](https://package.elm-lang.org/packages/elm/core/latest/Dict#diff) -}
+{-| Keep a ID-value pair when its ID does not appear in the second dictionary. -}
 diff : Internal.Dict counter1 (ID a) b -> Internal.Dict counter2 (ID a) c -> Internal.Dict counter1 (ID a) b
 diff dict1 dict2 =
     Dict.diff (unpackDict dict1) (unpackDict dict2)
     |> packDict dict1
 
-{-| Same as [`Dict.intersect`](https://package.elm-lang.org/packages/elm/core/latest/Dict#intersect), but can accept dictionaries with different value types -}
+
+{-| Keep a ID-value pair when its ID appears in the second dictionary. Preference is given to values in the first dictionary. -}
 intersect : Internal.Dict counter1 (ID a) b -> Internal.Dict counter2 (ID a) c -> Internal.Dict counter1 (ID a) b
 intersect dict1 dict2 =
     filter (\k _ -> member k dict2) dict1
 
 
-{-| Same as [`Dict.union`](https://package.elm-lang.org/packages/elm/core/latest/Dict#union) -}
+{-| Combine two dictionaries. If there is a collision, preference is given to the first dictionary. -}
 union : Internal.Dict counter1 (ID a) value -> Internal.Dict counter2 (ID a) value -> Dict (ID a) value
 union dict1 dict2 =
     pack (Dict.union (unpackDict dict1) (unpackDict dict2))

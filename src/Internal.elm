@@ -2,8 +2,6 @@ module Internal exposing (..)
 
 import Dict
 
-import Json.Decode as D
-
 type ID a
     = ID Int
 

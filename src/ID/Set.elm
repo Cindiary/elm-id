@@ -1,6 +1,7 @@
 module ID.Set exposing
     ( Set
     , empty
+    , singleton
     , fromList
     , toList
     , isEmpty
@@ -10,6 +11,7 @@ module ID.Set exposing
     , remove
     , filter
     , fold
+    , partition
     , diff
     , intersect
     , union
@@ -20,7 +22,7 @@ module ID.Set exposing
 {-|
 @docs Set
 
-@docs empty, fromList, toList
+@docs empty, singleton, fromList, toList
 
 @docs isEmpty, size, member
 
@@ -28,7 +30,7 @@ module ID.Set exposing
 
 @docs filter, fold
 
-@docs diff, intersect, union
+@docs partition, diff, intersect, union
 
 # Json
 @docs encode, decoder
@@ -46,10 +48,16 @@ type alias Set id =
     ID.Dict.Dict id ()
 
 
-{-| Alias for [`ID.Dict.empty`](ID.Dict#empty) -}
+{-| Create a empty [`Dict`](ID.Dict#Dict) -}
 empty : Set (ID a)
 empty =
     ID.Dict.empty
+
+
+{-| Create a set with a single ID -}
+singleton : ID a -> Set (ID a)
+singleton id =
+    insert id empty
 
 
 {-| Create a set from a list of IDs -}
@@ -58,67 +66,73 @@ fromList list =
     ID.Dict.fromList (List.map (\id -> ( id, () )) list)
 
 
-{-| Alias for [`ID.Dict.ids`](ID.Dict#ids) -}
+{-| Get all of the IDs in a set, sorted from lowest to highest. -}
 toList : Set (ID a) -> List ( ID a )
 toList =
     ID.Dict.ids
 
 
-{-| Alias for [`ID.Dict.isEmpty`](ID.Dict#isEmpty) -}
+{-| Determine if a set is empty. -}
 isEmpty : Set (ID a) -> Bool
 isEmpty =
     ID.Dict.isEmpty
 
 
-{-| Alias for [`ID.Dict.size`](ID.Dict#size) -}
+{-| Determine the number of IDs in the set. -}
 size : Set (ID a) -> Int
 size =
     ID.Dict.size
 
 
-{-| Alias for [`ID.Dict.member`](ID.Dict#member) -}
+{-| Determine if a ID is in a set. -}
 member : ID a -> Set (ID a) -> Bool
 member =
     ID.Dict.member
 
 
-{-| Alias for [`ID.Dict.insert`](ID.Dict#insert) but without a value -}
+{-| Insert a ID into a set. -}
 insert : ID a -> Set (ID a) -> Set (ID a)
 insert id set =
     ID.Dict.insert id () set
 
 
-{-| Alias for [`ID.Dict.remove`](ID.Dict#remove) -}
+{-| Remove a ID from a set. If the ID is not found, no changes are made. -}
 remove : ID a -> Set (ID a) -> Set (ID a)
 remove =
     ID.Dict.remove
 
 
-{-| Alias for [`ID.Dict.filter`](ID.Dict#filter) -}
+{-| Keep only the IDs that pass the given test. -}
 filter : ( ID a -> Bool ) -> Set (ID a) -> Set (ID a)
 filter predicate =
     ID.Dict.filter ( \id () -> predicate id )
 
 
-{-| Alias for [`ID.Dict.fold`](ID.Dict#fold) but without a value argument -}
+{-| Fold over the IDs in a set from lowest ID to highest ID. -}
 fold : (ID a -> c -> c) -> c -> Set (ID a) -> c
 fold func start set =
     Dict.foldl ( \id _ acc -> func ( Internal.ID id ) acc ) start ( unpackDict set )
 
 
-{-| Alias for [`ID.Dict.diff`](ID.Dict#diff) -}
+{-| Partition a set according to some test. The first set contains all IDs which passed the test, and the second contains the IDs that did not. -}
+partition : (ID a -> Bool) -> Set (ID a) -> ( Set (ID a), Set (ID a) )
+partition func set =
+    ID.Dict.partition ( \id () -> func id ) set
+
+
+{-| Get the difference between the first set and the second. Keeps IDs that do not appear in the second set. -}
 diff : Set (ID a) -> Set (ID a) -> Set (ID a)
 diff =
     ID.Dict.diff
 
 
-{-| Alias for [`ID.Dict.intersect`](ID.Dict#intersect) -}
+{-| Get the intersection of two sets. Keeps IDs that appear in both sets. -}
 intersect : Set (ID a) -> Set (ID a) -> Set (ID a)
 intersect =
     ID.Dict.intersect
 
 
-{-| Alias for [`ID.Dict.union`](ID.Dict#union) -}
+{-| Get the union of two sets. Keep all IDs. -}
 union : Set (ID a) -> Set (ID a) -> Set (ID a)
 union =
     ID.Dict.union
