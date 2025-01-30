@@ -1,34 +1,34 @@
-Elm ID is a library for making opaque ID types that can be used in dictionaries.
+Elm Id is a library for making opaque Id types that can be used in dictionaries.
 
 ## Example
 
 ```elm
-module User exposing (User, ID, newCounter, newUser)
+module User exposing (User, Id, newCounter, newUser)
 
-import ID
-import ID.Counter
+import Id
+import Id.Counter
 
-type alias ID =
-    ID.ID IDInternal
+type alias Id =
+    Id.Id IdInternal
 
-type IDInternal
-    = IDInternal
+type IdInternal
+    = IdInternal
 
 type alias User =
-    { id : ID
+    { id : Id
     , name : String
     }
 
 
-newCounter : ID.Counter ID
+newCounter : Id.Counter Id
 newCounter =
-    ID.Counter.new IDInternal
+    Id.Counter.new IdInternal
 
 
-newUser : ID.Counter -> String -> ( ID.Counter, User )
+newUser : Id.Counter -> String -> ( Id.Counter, User )
 newUser counter name =
     let
-        ( id, newCounter ) = ID.Counter.newID counter
+        ( id, newCounter ) = Id.Counter.newId counter
     in
     ( newCounter, { id = id, name = name } )
 

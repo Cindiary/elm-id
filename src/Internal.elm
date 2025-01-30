@@ -2,26 +2,26 @@ module Internal exposing (..)
 
 import Dict
 
-type ID a
-    = ID Int
+type Id a
+    = Id Int
 
 type Counter id
-    = IDCounter Int
+    = IdCounter Int
 
 type Dict noCounter id value
     = WithoutCounter noCounter ( Dict.Dict Int value )
     | WithCounter ( Counter id ) ( Dict.Dict Int value )
 
 
-unpack : ID a -> Int
-unpack (ID id) =
+unpack : Id a -> Int
+unpack (Id id) =
     id
 
 
-accountForID : ID a -> Counter (ID a) -> Counter (ID a)
-accountForID id (IDCounter nextID as counter) =
-    if unpack id >= nextID then
-        IDCounter ( unpack id + 10 )
+accountForId : Id a -> Counter (Id a) -> Counter (Id a)
+accountForId id (IdCounter nextId as counter) =
+    if unpack id >= nextId then
+        IdCounter ( unpack id + 10 )
     else
         counter
 

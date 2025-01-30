@@ -1,24 +1,25 @@
-module ID exposing
-    ( ID
+module Id exposing
+    ( Id
     , Counter
     , Dict
     , Set
     , CounterDict
+    , Dict_
     , toString
-    , debugID
+    , debugId
     , parser
     , encode
     , decoder
     )
 
 {-|
-Module in which the base ID type is defined
+Module in which the base Id type is defined
 
 # Types
-@docs ID, Counter, Dict, Set, CounterDict
+@docs Id, Counter, Dict, Set, CounterDict, Dict_
 
 # Functions
-@docs toString, debugID
+@docs toString, debugId
 
 # Parser
 @docs parser
@@ -27,71 +28,74 @@ Module in which the base ID type is defined
 @docs encode, decoder
 -}
 
-import Internal exposing(ID(..))
+import Internal exposing(Id(..))
 
-import ID.Counter
-import ID.Dict
-import ID.Set
-import ID.CounterDict
+import Id.Counter
+import Id.Dict
+import Id.Set
+import Id.CounterDict
 
 import Json.Encode as E
 import Json.Decode as D
 import Parser
 
 
-{-| The basis for making a ID type, has one generic type argument which should be an internal type to the module the ID type is defined in.
+{-| The basis for making a Id type, has one generic type argument which should be an internal type to the module the Id type is defined in.
 
-    module UserID exposing(ID)
+    module UserId exposing(Id)
 
-    import ID
+    import Id
 
-    type alias ID = ID.ID IDInternal
+    type alias Id = Id.Id IdInternal
 
-    type IDInternal = IDInternal
+    type IdInternal = IdInternal
 -}
-type alias ID a = Internal.ID a
+type alias Id a = Internal.Id a
 
 
-{-| Alias for [`ID.Counter.Counter`](ID.Counter#Counter) -}
-type alias Counter id = ID.Counter.Counter id
+{-| Alias for [`Id.Counter.Counter`](Id.Counter#Counter) -}
+type alias Counter id = Id.Counter.Counter id
 
 
-{-| Alias for [`ID.Dict.Dict`](ID.Dict#Dict) -}
-type alias Dict id value = ID.Dict.Dict id value
+{-| Alias for [`Id.Dict.Dict`](Id.Dict#Dict) -}
+type alias Dict id value = Id.Dict.Dict id value
 
 
-{-| Alias for [`ID.Set.Set`](ID.Set#Set) -}
-type alias Set id = ID.Set.Set id
+{-| Alias for [`Id.Set.Set`](Id.Set#Set) -}
+type alias Set id = Id.Set.Set id
 
-{-| Alias for [`ID.CounterDict.CounterDict`](ID.CounterDict#CounterDict) -}
-type alias CounterDict id value = ID.CounterDict.CounterDict id value
+{-| Alias for [`Id.CounterDict.CounterDict`](Id.CounterDict#CounterDict) -}
+type alias CounterDict id value = Id.CounterDict.CounterDict id value
+
+{-| Alias for [`Id.Dict.Dict_`](Id.Dict#Dict_) -}
+type alias Dict_ counter id value = Id.Dict.Dict_ counter id value
 
 
-{-| Converts an ID into a string representing the number inside the ID -}
-toString : ID a -> String
-toString ( ID id ) =
+{-| Converts an Id into a string representing the number inside the Id -}
+toString : Id a -> String
+toString ( Id id ) =
     String.fromInt id
 
 
-{-| Create an ID with an arbitrary value for debugging purposes. Requires 'Debug.todo' as a first argument -}
-debugID : (String -> Never) -> Int -> ID a
-debugID _ num =
-    ID num
+{-| Create an Id with an arbitrary value for debugging purposes. Requires 'Debug.todo' as a first argument -}
+debugId : (String -> Never) -> Int -> Id a
+debugId _ num =
+    Id num
 
 
-{-| Parser for 'ID' -}
-parser : Parser.Parser ( ID a )
+{-| Parser for 'Id' -}
+parser : Parser.Parser ( Id a )
 parser =
-    Parser.map ID Parser.int
+    Parser.map Id Parser.int
 
 
-{-| Encode `ID` to a JSON value -}
-encode : ID a -> E.Value
-encode (ID id) =
+{-| Encode `Id` to a JSON value -}
+encode : Id a -> E.Value
+encode (Id id) =
     E.int id
 
 
-{-| JSON Decoder for `ID` -}
-decoder : D.Decoder ( ID a )
+{-| JSON Decoder for `Id` -}
+decoder : D.Decoder ( Id a )
 decoder =
-    D.map ID D.int
+    D.map Id D.int

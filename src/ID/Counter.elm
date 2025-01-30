@@ -1,16 +1,16 @@
-module ID.Counter exposing
+module Id.Counter exposing
     ( Counter
     , new
-    , newID
-    , newID2
-    , newID3
-    , newID4
-    , giveIDs
-    , accountForID
-    , accountForIDs
-    , accountForItemIDs
-    , accountForDictIDs
-    , sanitizeIDs
+    , newId
+    , newId2
+    , newId3
+    , newId4
+    , giveIds
+    , accountForId
+    , accountForIds
+    , accountForItemIds
+    , accountForDictIds
+    , sanitizeIds
     , encode
     , decoder
     )
@@ -18,17 +18,17 @@ module ID.Counter exposing
 {-|
 
 @docs Counter
-@docs new, newID, newID2, newID3, newID4, giveIDs
-@docs accountForID, accountForIDs, accountForItemIDs, accountForDictIDs
-@docs sanitizeIDs
+@docs new, newId, newId2, newId3, newId4, giveIds
+@docs accountForId, accountForIds, accountForItemIds, accountForDictIds
+@docs sanitizeIds
 
 # Json
 @docs encode, decoder
 
 -}
 
-import Internal exposing(ID(..), Counter(..), unpack)
-import ID.Set
+import Internal exposing(Id(..), Counter(..), unpack)
+import Id.Set
 import Dict
 
 
@@ -38,72 +38,72 @@ import Json.Decode as D
 
 
 {-|
-Counter type which is used to create [`ID`](ID#ID) values
+Counter type which is used to create [`Id`](Id#Id) values
 -}
 
 type alias Counter id = Internal.Counter id
 
 
 {-| Create a new counter -}
-new : a -> Counter (ID a)
+new : a -> Counter (Id a)
 new _ =
-    IDCounter 0
+    IdCounter 1
 
 
-{-|  Creates a new [`ID`](ID#ID) and advanced the counter, make sure to use the new counter to create any new IDs -}
-newID : Counter (ID a) -> ( ID a, Counter (ID a) )
-newID (IDCounter nextID) =
-    ( ID nextID, IDCounter (nextID + 1) )
+{-|  Creates a new [`Id`](Id#Id) and advanced the counter, make sure to use the new counter to create any new Ids -}
+newId : Counter (Id a) -> ( Id a, Counter (Id a) )
+newId (IdCounter nextId) =
+    ( Id nextId, IdCounter (nextId + 1) )
 
 
-{-| Same as [`newID`](ID.Counter#newID) but creates 2 IDs instead of 1 -}
-newID2 : Counter (ID a) -> ( ID a, ID a, Counter (ID a) )
-newID2 (IDCounter nextID) =
-    ( ID nextID
-    , ID (nextID + 1)
-    , IDCounter (nextID + 2)
+{-| Same as [`newId`](Id.Counter#newId) but creates 2 Ids instead of 1 -}
+newId2 : Counter (Id a) -> ( Id a, Id a, Counter (Id a) )
+newId2 (IdCounter nextId) =
+    ( Id nextId
+    , Id (nextId + 1)
+    , IdCounter (nextId + 2)
     )
 
 
-{-| Same as [`newID`](ID.Counter#newID) but creates 3 IDs instead of 1 -}
-newID3 : Counter (ID a) -> ( { id1 : ID a, id2 : ID a, id3 : ID a }, Counter (ID a) )
-newID3 (IDCounter nextID) =
-    ( { id1 = ID nextID
-      , id2 = ID (nextID + 1)
-      , id3 = ID (nextID + 2)
+{-| Same as [`newId`](Id.Counter#newId) but creates 3 Ids instead of 1 -}
+newId3 : Counter (Id a) -> ( { id1 : Id a, id2 : Id a, id3 : Id a }, Counter (Id a) )
+newId3 (IdCounter nextId) =
+    ( { id1 = Id nextId
+      , id2 = Id (nextId + 1)
+      , id3 = Id (nextId + 2)
       }
-    , IDCounter (nextID + 3)
+    , IdCounter (nextId + 3)
     )
 
 
-{-| Same as [`newID`](ID.Counter#newID) but creates 4 IDs instead of 1 -}
-newID4 : Counter (ID a) -> ( { id1 : ID a, id2 : ID a, id3 : ID a, id4 : ID a }, Counter (ID a) )
-newID4 (IDCounter nextID) =
-    ( { id1 = ID nextID
-      , id2 = ID (nextID + 1)
-      , id3 = ID (nextID + 2)
-      , id4 = ID (nextID + 3)
+{-| Same as [`newId`](Id.Counter#newId) but creates 4 Ids instead of 1 -}
+newId4 : Counter (Id a) -> ( { id1 : Id a, id2 : Id a, id3 : Id a, id4 : Id a }, Counter (Id a) )
+newId4 (IdCounter nextId) =
+    ( { id1 = Id nextId
+      , id2 = Id (nextId + 1)
+      , id3 = Id (nextId + 2)
+      , id4 = Id (nextId + 3)
       }
-    , IDCounter (nextID + 4)
+    , IdCounter (nextId + 4)
     )
 
 
-{-| Assign IDs to a number of values, make sure to use the new counter to create any new IDs -}
-giveIDs : (ID a -> b -> c) -> Counter (ID a) -> List b -> ( List c, Counter (ID a) )
-giveIDs func (IDCounter nextID) items =
-    ( List.indexedMap (\i item -> func (ID (nextID + i)) item) items, IDCounter (nextID + List.length items) )
+{-| Assign Ids to a number of values, make sure to use the new counter to create any new Ids -}
+giveIds : (Id a -> b -> c) -> Counter (Id a) -> List b -> ( List c, Counter (Id a) )
+giveIds func (IdCounter nextId) items =
+    ( List.indexedMap (\i item -> func (Id (nextId + i)) item) items, IdCounter (nextId + List.length items) )
 
 
 {-|
-Account for a single IDs.
-This should not be necessary if you always make sure to use the counter result from [`newID`](ID.Counter#newID), but can be used to sanitize the counter after encoding and decoding a counter and values
+Account for a single Ids.
+This should not be necessary if you always make sure to use the counter result from [`newId`](Id.Counter#newId), but can be used to sanitize the counter after encoding and decoding a counter and values
 -}
-accountForID : ID a -> Counter (ID a) -> Counter (ID a)
-accountForID =
-    Internal.accountForID
+accountForId : Id a -> Counter (Id a) -> Counter (Id a)
+accountForId =
+    Internal.accountForId
 
 
-idMax : ID a -> ID a -> ID a
+idMax : Id a -> Id a -> Id a
 idMax id1 id2 =
     if unpack id1 > unpack id2 then
         id1
@@ -112,72 +112,72 @@ idMax id1 id2 =
 
 
 {-|
-Account for a list of IDs.
-This should not be necessary if you always make sure to use the counter result from [`newID`](ID.Counter#newID), but can be used to sanitize the counter after encoding and decoding a counter and values
+Account for a list of Ids.
+This should not be necessary if you always make sure to use the counter result from [`newId`](Id.Counter#newId), but can be used to sanitize the counter after encoding and decoding a counter and values
 -}
-accountForIDs : List (ID a) -> Counter (ID a) -> Counter (ID a)
-accountForIDs ids counter =
+accountForIds : List (Id a) -> Counter (Id a) -> Counter (Id a)
+accountForIds ids counter =
     let
-        maxID = List.foldl idMax ( ID -1 ) ids
+        maxId = List.foldl idMax ( Id -1 ) ids
     in
-    accountForID maxID counter
+    accountForId maxId counter
 
 
 {-|
-Same as [`accountForIDs`](ID.Counter#accountForIDs) but can be used for a list of values containing an [`ID`](ID#ID)
+Same as [`accountForIds`](Id.Counter#accountForIds) but can be used for a list of values containing an [`Id`](Id#Id)
 
-    newCounter = accountForItemIDs .id users counter
+    newCounter = accountForItemIds .id users counter
 -}
-accountForItemIDs : (item -> ID a) -> List item -> Counter (ID a) -> Counter (ID a)
-accountForItemIDs getID items counter =
+accountForItemIds : (item -> Id a) -> List item -> Counter (Id a) -> Counter (Id a)
+accountForItemIds getId items counter =
     let
-        maxID = List.foldl ( getID >> idMax ) ( ID -1 ) items
+        maxId = List.foldl ( getId >> idMax ) ( Id -1 ) items
     in
-    accountForID maxID counter
+    accountForId maxId counter
 
 
-{-| Same as [`accountForIDs`](ID.Counter#accountForIDs) but can be used with a [`Dict`](ID.Dict#Dict) -}
-accountForDictIDs : Internal.Dict counter (ID a) value -> Counter (ID a) -> Counter (ID a)
-accountForDictIDs dict counter =
+{-| Same as [`accountForIds`](Id.Counter#accountForIds) but can be used with a [`Dict`](Id.Dict#Dict) -}
+accountForDictIds : Internal.Dict counter (Id a) value -> Counter (Id a) -> Counter (Id a)
+accountForDictIds dict counter =
     let
         fold id _ res = max id res
-        maxID = Dict.foldl fold -1 ( Internal.unpackDict dict )
+        maxId = Dict.foldl fold -1 ( Internal.unpackDict dict )
     in
-    accountForID ( ID maxID ) counter
+    accountForId ( Id maxId ) counter
 
 
-{-| Account for all used IDs in the counter (as in [`accountForIDs`](ID.Counter#accountForIDs)) and give new IDs to any items that have a duplicate [`ID`](ID#ID) -}
-sanitizeIDs : (val -> ID a) -> (val -> ID a -> val) -> List val -> Counter (ID a) -> ( List val, Counter (ID a) )
-sanitizeIDs getter setter items counter =
+{-| Account for all used Ids in the counter (as in [`accountForIds`](Id.Counter#accountForIds)) and give new Ids to any items that have a duplicate [`Id`](Id#Id) -}
+sanitizeIds : (val -> Id a) -> (val -> Id a -> val) -> List val -> Counter (Id a) -> ( List val, Counter (Id a) )
+sanitizeIds getter setter items counter =
     let
-        foldFunc item ( ls, count, usedIDs ) =
-            if ID.Set.member (getter item) usedIDs then
-                case newID count of
+        foldFunc item ( ls, count, usedIds ) =
+            if Id.Set.member (getter item) usedIds then
+                case newId count of
                     ( id, newCounter ) ->
                         ( setter item id :: ls
                         , newCounter
-                        , ID.Set.insert id usedIDs
+                        , Id.Set.insert id usedIds
                         )
 
             else
                 ( item :: ls
                 , count
-                , ID.Set.insert (getter item) usedIDs
+                , Id.Set.insert (getter item) usedIds
                 )
 
         ( newItems, newCounter_, _ ) =
-            List.foldr foldFunc ( [], accountForItemIDs getter items counter, ID.Set.empty ) items
+            List.foldr foldFunc ( [], accountForItemIds getter items counter, Id.Set.empty ) items
     in
     ( newItems, newCounter_ )
 
 
 {-| Encode 'Counter' to a JSON value -}
 encode : Counter id -> E.Value
-encode (IDCounter value) =
+encode (IdCounter value) =
     E.int value
 
 
 {-| JSON Decoder for 'Counter' -}
 decoder : D.Decoder ( Counter id )
 decoder =
-    D.map IDCounter D.int
+    D.map IdCounter D.int

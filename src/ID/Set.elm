@@ -1,8 +1,9 @@
-module ID.Set exposing
+module Id.Set exposing
     ( Set
     , empty
     , singleton
     , fromList
+    , fromDict
     , toList
     , isEmpty
     , size
@@ -22,7 +23,7 @@ module ID.Set exposing
 {-|
 @docs Set
 
-@docs empty, singleton, fromList, toList
+@docs empty, singleton, fromList, fromDict, toList
 
 @docs isEmpty, size, member
 
@@ -36,117 +37,132 @@ module ID.Set exposing
 @docs encode, decoder
 -}
 
-import Internal exposing (ID, unpackDict)
-import ID.Dict
+import Internal exposing (Id, unpack, unpackDict)
+import Id.Dict
 import Dict
 
 import Json.Encode as E
 import Json.Decode as D
 
-{-| A set type for IDs, is equal to a [`ID.Dict`](ID.Dict#Dict) with empty tuples as values -}
+{-| A set type for Ids, is equal to a [`Id.Dict`](Id.Dict#Dict) with empty tuples as values -}
 type alias Set id =
-    ID.Dict.Dict id ()
+    Id.Dict.Dict id ()
 
 
-{-| Create a empty [`Dict`](ID.Dict#Dict) -}
-empty : Set (ID a)
+pack : Dict.Dict Int () -> Set id
+pack =
+    Internal.WithoutCounter ()
+
+
+{-| Create a empty [`Set`](Id.Set#Set) -}
+empty : Set (Id a)
 empty =
-    ID.Dict.empty
+    Id.Dict.empty
 
 
-{-| Create a set with a single ID -}
-singleton : ID a -> Set (ID a)
+{-| Create a set with a single Id -}
+singleton : Id a -> Set (Id a)
 singleton id =
     insert id empty
 
 
-{-| Create a set from a list of IDs -}
-fromList : List ( ID a ) -> Set (ID a)
+{-| Create a set from a list of Ids -}
+fromList : List (Id a) -> Set (Id a)
 fromList list =
-    ID.Dict.fromList (List.map (\id -> ( id, () )) list)
+    list
+    |> List.foldl ( \id dict -> Dict.insert ( unpack id ) () dict ) Dict.empty
+    |> pack
 
 
-{-| Get all of the IDs in a set, sorted from lowest to highest. -}
-toList : Set (ID a) -> List ( ID a )
+{-| Create a set with the Ids from a [`Dict`](Id.Dict#Dict) -}
+fromDict : Id.Dict.Dict_ counter (Id a) value -> Set (Id a)
+fromDict dict =
+    unpackDict dict
+    |> Dict.map ( \_ _ -> () )
+    |> pack
+
+
+{-| Get all of the Ids in a set, sorted from lowest to highest. -}
+toList : Set (Id a) -> List ( Id a )
 toList =
-    ID.Dict.ids
+    Id.Dict.ids
 
 
 {-| Determine if a set is empty. -}
-isEmpty : Set (ID a) -> Bool
+isEmpty : Set (Id a) -> Bool
 isEmpty =
-    ID.Dict.isEmpty
+    Id.Dict.isEmpty
 
 
-{-| Determine the number of IDs in the set. -}
-size : Set (ID a) -> Int
+{-| Determine the number of Ids in the set. -}
+size : Set (Id a) -> Int
 size =
-    ID.Dict.size
+    Id.Dict.size
 
 
-{-| Determine if a ID is in a set. -}
-member : ID a -> Set (ID a) -> Bool
+{-| Determine if a Id is in a set. -}
+member : Id a -> Set (Id a) -> Bool
 member =
-    ID.Dict.member
+    Id.Dict.member
 
 
-{-| Insert a ID into a set. -}
-insert : ID a -> Set (ID a) -> Set (ID a)
+{-| Insert a Id into a set. -}
+insert : Id a -> Set (Id a) -> Set (Id a)
 insert id set =
-    ID.Dict.insert id () set
+    Id.Dict.insert id () set
 
 
-{-| Remove a ID from a set. If the ID is not found, no changes are made. -}
-remove : ID a -> Set (ID a) -> Set (ID a)
+{-| Remove a Id from a set. If the Id is not found, no changes are made. -}
+remove : Id a -> Set (Id a) -> Set (Id a)
 remove =
-    ID.Dict.remove
+    Id.Dict.remove
 
 
-{-| Keep only the IDs that pass the given test. -}
-filter : ( ID a -> Bool ) -> Set (ID a) -> Set (ID a)
+{-| Keep only the Ids that pass the given test. -}
+filter : ( Id a -> Bool ) -> Set (Id a) -> Set (Id a)
 filter predicate =
-    ID.Dict.filter ( \id () -> predicate id )
+    Id.Dict.filter ( \id () -> predicate id )
 
 
-{-| Fold over the IDs in a set from lowest ID to highest ID. -}
-fold : (ID a -> c -> c) -> c -> Set (ID a) -> c
+{-| Fold over the Ids in a set from lowest Id to highest Id. -}
+fold : (Id a -> c -> c) -> c -> Set (Id a) -> c
 fold func start set =
-    Dict.foldl ( \id _ acc -> func ( Internal.ID id ) acc ) start ( unpackDict set )
+    Dict.foldl ( \id _ acc -> func ( Internal.Id id ) acc ) start ( unpackDict set )
 
 
-{-| Partition a set according to some test. The first set contains all IDs which passed the test, and the second contains the IDs that did not. -}
-partition : (ID a -> Bool) -> Set (ID a) -> ( Set (ID a), Set (ID a) )
+{-| Partition a set according to some test. The first set contains all Ids which passed the test, and the second contains the Ids that did not. -}
+partition : (Id a -> Bool) -> Set (Id a) -> ( Set (Id a), Set (Id a) )
 partition func set =
-    ID.Dict.partition ( \id () -> func id ) set
+    Id.Dict.partition ( \id () -> func id ) set
 
 
-{-| Get the difference between the first set and the second. Keeps IDs that do not appear in the second set. -}
-diff : Set (ID a) -> Set (ID a) -> Set (ID a)
+{-| Get the difference between the first set and the second. Keeps Ids that do not appear in the second set. -}
+diff : Set (Id a) -> Set (Id a) -> Set (Id a)
 diff =
-    ID.Dict.diff
+    Id.Dict.diff
 
 
-{-| Get the intersection of two sets. Keeps IDs that appear in both sets. -}
-intersect : Set (ID a) -> Set (ID a) -> Set (ID a)
+{-| Get the intersection of two sets. Keeps Ids that appear in both sets. -}
+intersect : Set (Id a) -> Set (Id a) -> Set (Id a)
 intersect =
-    ID.Dict.intersect
+    Id.Dict.intersect
 
 
-{-| Get the union of two sets. Keep all IDs. -}
-union : Set (ID a) -> Set (ID a) -> Set (ID a)
+{-| Get the union of two sets. Keep all Ids. -}
+union : Set (Id a) -> Set (Id a) -> Set (Id a)
 union =
-    ID.Dict.union
+    Id.Dict.union
 
 
-{-| Encode [`Set`](ID.Set#Set) to a JSON value -}
+{-| Encode [`Set`](Id.Set#Set) to a JSON value -}
 encode : Set id -> E.Value
 encode set =
     Dict.keys ( unpackDict set )
     |> E.list E.int
 
 
-{-| JSON Decoder for [`Set`](ID.Set#Set) -}
+{-| JSON Decoder for [`Set`](Id.Set#Set) -}
 decoder : D.Decoder ( Set id )
 decoder =
     D.list D.int
-    |> D.map ( \ids_ -> Internal.WithoutCounter () ( Dict.fromList ( List.map ( \id -> ( id, () ) ) ids_ ) ) )
+    |> D.map ( \ids_ -> pack ( Dict.fromList ( List.map ( \id -> ( id, () ) ) ids_ ) ) )
