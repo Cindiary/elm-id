@@ -280,30 +280,27 @@ union dict1 dict2 =
 {-| Encode a [`Dict`](Id.Dict#Dict) to a JSON value -}
 encode : ( value -> E.Value ) -> Dict id value -> E.Value
 encode encodeValue dict =
-    Dict.toList (unpackDict dict)
-    |> List.map ( Tuple.mapBoth String.fromInt encodeValue )
-    |> E.object
+    E.dict String.fromInt encodeValue ( unpackDict dict )
 
 
 {-| JSON Decoder for [`Dict`](Id.Dict#Dict) -}
 decoder : D.Decoder value -> D.Decoder ( Dict id value )
 decoder valueDecoder =
     let
-        fromPairs pairs =
-            case pairs of
-                ( key, value ) :: ls ->
-                    case String.toInt key of
-                        Just id ->
-                            D.map
-                            ( Dict.insert id value )
-                            ( fromPairs ls )
-
-                        Nothing ->
-                            D.fail ( "Invalid id: \"" ++ key ++ "\"" )
+        addPair ( key, value ) ( dict, invalidKeys ) =
+            case String.toInt key of
+                Just id ->
+                    ( Dict.insert id value dict, invalidKeys )
                 
-                [] ->
-                    D.succeed Dict.empty
+                Nothing ->
+                    ( dict, key :: invalidKeys )
+        fromPairs pairs =
+            case List.foldl addPair ( Dict.empty, [] ) pairs of
+                ( dict, [] ) ->
+                    D.succeed ( pack dict )
+                
+                ( _, keys ) ->
+                    D.fail ( "Invalid keys: " ++ String.join ", " keys )
     in
     D.keyValuePairs valueDecoder
     |> D.andThen fromPairs
-    |> D.map pack

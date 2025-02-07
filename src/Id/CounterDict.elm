@@ -263,16 +263,42 @@ union dict1 dict2 =
 {-| Encode `CounterDict` to a JSON value -}
 encode : ( value -> D.Value ) -> CounterDict ( Id id ) value -> E.Value
 encode encodeValue dict =
-    E.object
-    [ ( "counter", Counter.encode ( getCounter_ dict ) )
-    , ( "values", Id.Dict.encode encodeValue ( WithoutCounter () ( unpackDict dict ) ) )
-    ]
+    unpackDict dict
+    |> Dict.toList
+    |> List.map ( Tuple.mapBoth String.fromInt encodeValue )
+    |> (::) ( "counter", Counter.encode ( getCounter_ dict ) )
+    |> E.object
 
 
 {-| JSON Decoder for `SetCounterDict -}
 decoder : D.Decoder value -> D.Decoder ( CounterDict ( Id id ) value )
 decoder valueDecoder =
-    D.map2 ( \counter dict -> WithCounter ( Counter.accountForDictIds dict counter ) ( Internal.unpackDict dict ) )
-    ( D.field "counter" Counter.decoder )
-    ( D.field "values" ( Id.Dict.decoder valueDecoder ) )
+    let
+        addDecoder ( key, () ) baseDecoder =
+            case String.toInt key of
+                Just idInt ->
+                    D.map2 ( Dict.insert idInt ) ( D.field key valueDecoder ) baseDecoder
+                
+                Nothing ->
+                    if key == "counter" then
+                        baseDecoder
+                    else
+                        D.fail ( "Invalid key: " ++ key )
+        fromKeys pairs =
+            List.foldl addDecoder ( D.succeed Dict.empty ) pairs
+        pack counter dict =
+            let
+                sanitizedCounter =
+                    case List.maximum ( Dict.keys dict ) of
+                        Just maxId ->
+                            Counter.accountForId ( Id maxId ) counter
+                        
+                        Nothing ->
+                            counter
+            in
+            WithCounter sanitizedCounter dict
+    in
+    D.keyValuePairs ( D.succeed () )
+    |> D.andThen fromKeys
+    |> D.map2 pack ( D.field "counter" Counter.decoder )
 
