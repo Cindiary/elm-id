@@ -9,7 +9,6 @@ module Id.Counter exposing
     , accountForId
     , accountForIds
     , accountForItemIds
-    , accountForDictIds
     , sanitizeIds
     , encode
     , decoder
@@ -19,7 +18,7 @@ module Id.Counter exposing
 
 @docs Counter
 @docs new, newId, newId2, newId3, newId4, giveIds
-@docs accountForId, accountForIds, accountForItemIds, accountForDictIds
+@docs accountForId, accountForIds, accountForItemIds
 @docs sanitizeIds
 
 # Json
@@ -27,9 +26,8 @@ module Id.Counter exposing
 
 -}
 
-import Internal exposing(Id(..), Counter(..), unpack)
-import Id.Set
-import Dict
+import Internal exposing(Id(..), Counter(..), unpackId)
+import Set
 
 
 import Json.Encode as E
@@ -40,7 +38,6 @@ import Json.Decode as D
 {-|
 Counter type which is used to create [`Id`](Id#Id) values
 -}
-
 type alias Counter id = Internal.Counter id
 
 
@@ -99,13 +96,16 @@ Account for a single Ids.
 This should not be necessary if you always make sure to use the counter result from [`newId`](Id.Counter#newId), but can be used to sanitize the counter after encoding and decoding a counter and values
 -}
 accountForId : Id a -> Counter (Id a) -> Counter (Id a)
-accountForId =
-    Internal.accountForId
+accountForId id ( IdCounter nextId as counter ) =
+    if unpackId id >= nextId then
+        IdCounter ( unpackId id + 10 )
+    else
+        counter
 
 
 idMax : Id a -> Id a -> Id a
 idMax id1 id2 =
-    if unpack id1 > unpack id2 then
+    if unpackId id1 > unpackId id2 then
         id1
     else
         id2
@@ -117,10 +117,15 @@ This should not be necessary if you always make sure to use the counter result f
 -}
 accountForIds : List (Id a) -> Counter (Id a) -> Counter (Id a)
 accountForIds ids counter =
-    let
-        maxId = List.foldl idMax ( Id -1 ) ids
-    in
-    accountForId maxId counter
+    case ids of
+        id :: ls ->
+            let
+                maxId = List.foldl idMax id ls
+            in
+            accountForId maxId counter
+
+        [] ->
+            counter
 
 
 {-|
@@ -130,20 +135,15 @@ Same as [`accountForIds`](Id.Counter#accountForIds) but can be used for a list o
 -}
 accountForItemIds : (item -> Id a) -> List item -> Counter (Id a) -> Counter (Id a)
 accountForItemIds getId items counter =
-    let
-        maxId = List.foldl ( getId >> idMax ) ( Id -1 ) items
-    in
-    accountForId maxId counter
-
-
-{-| Same as [`accountForIds`](Id.Counter#accountForIds) but can be used with a [`Dict`](Id.Dict#Dict) -}
-accountForDictIds : Internal.Dict counter (Id a) value -> Counter (Id a) -> Counter (Id a)
-accountForDictIds dict counter =
-    let
-        fold id _ res = max id res
-        maxId = Dict.foldl fold -1 ( Internal.unpackDict dict )
-    in
-    accountForId ( Id maxId ) counter
+    case items of
+        item :: ls ->
+            let
+                maxId = List.foldl ( getId >> idMax ) ( getId item ) ls
+            in
+            accountForId maxId counter
+        
+        [] -> 
+            counter
 
 
 {-| Account for all used Ids in the counter (as in [`accountForIds`](Id.Counter#accountForIds)) and give new Ids to any items that have a duplicate [`Id`](Id#Id) -}
@@ -151,22 +151,25 @@ sanitizeIds : (val -> Id a) -> (val -> Id a -> val) -> List val -> Counter (Id a
 sanitizeIds getter setter items counter =
     let
         foldFunc item ( ls, count, usedIds ) =
-            if Id.Set.member (getter item) usedIds then
+            let
+                idValue = unpackId (getter item)
+            in
+            if Set.member idValue usedIds then
                 case newId count of
                     ( id, newCounter ) ->
                         ( setter item id :: ls
                         , newCounter
-                        , Id.Set.insert id usedIds
+                        , Set.insert (unpackId id) usedIds
                         )
 
             else
                 ( item :: ls
                 , count
-                , Id.Set.insert (getter item) usedIds
+                , Set.insert idValue usedIds
                 )
 
         ( newItems, newCounter_, _ ) =
-            List.foldr foldFunc ( [], accountForItemIds getter items counter, Id.Set.empty ) items
+            List.foldr foldFunc ( [], accountForItemIds getter items counter, Set.empty ) items
     in
     ( newItems, newCounter_ )
 

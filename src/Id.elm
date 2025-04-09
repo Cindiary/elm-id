@@ -5,6 +5,8 @@ module Id exposing
     , Set
     , CounterDict
     , Dict_
+    , List
+    , CounterList
     , toString
     , debugId
     , parser
@@ -16,7 +18,7 @@ module Id exposing
 Module in which the base Id type is defined
 
 # Types
-@docs Id, Counter, Dict, Set, CounterDict, Dict_
+@docs Id, Counter, Dict, Set, CounterDict, Dict_, List, CounterList
 
 # Functions
 @docs toString, debugId
@@ -34,6 +36,8 @@ import Id.Counter
 import Id.Dict
 import Id.Set
 import Id.CounterDict
+import Id.List
+import Id.CounterList
 
 import Json.Encode as E
 import Json.Decode as D
@@ -70,11 +74,17 @@ type alias CounterDict id value = Id.CounterDict.CounterDict id value
 {-| Alias for [`Id.Dict.Dict_`](Id.Dict#Dict_) -}
 type alias Dict_ counter id value = Id.Dict.Dict_ counter id value
 
+{-| Alias for ['Id.List.List'](Id.List#List) -}
+type alias List id value = Id.List.List id value
+
+{-| Alias for ['Id.CounterList.CounterList'](Id.CounterList#CounterList) -}
+type alias CounterList id value = Id.CounterList.CounterList id value
+
 
 {-| Converts an Id into a string representing the number inside the Id -}
 toString : Id a -> String
-toString ( Id id ) =
-    String.fromInt id
+toString =
+    Internal.idToString
 
 
 {-| Create an Id with an arbitrary value for debugging purposes. Requires 'Debug.todo' as a first argument -}
@@ -86,7 +96,7 @@ debugId _ num =
 {-| Parser for 'Id' -}
 parser : Parser.Parser ( Id a )
 parser =
-    Parser.map Id Parser.int
+    Internal.idParser
 
 
 {-| Encode `Id` to a JSON value -}

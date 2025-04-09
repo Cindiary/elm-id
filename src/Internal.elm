@@ -1,6 +1,13 @@
-module Internal exposing (..)
+module Internal exposing 
+    (Id(..), Counter(..)
+    , Dict(..)
+    , unpackId, accountForId
+    , idToString, idParser
+    , unpack, getCounter, pack, map
+    )
 
 import Dict
+import Parser exposing((|=), (|.))
 
 type Id a
     = Id Int
@@ -8,49 +15,71 @@ type Id a
 type Counter id
     = IdCounter Int
 
+
 type Dict noCounter id value
-    = WithoutCounter noCounter ( Dict.Dict Int value )
-    | WithCounter ( Counter id ) ( Dict.Dict Int value )
+    = WithCounter Int ( Dict.Dict Int value )
+    | WithoutCounter noCounter ( Dict.Dict Int value )
 
 
-unpack : Id a -> Int
-unpack (Id id) =
+unpackId : Id a -> Int
+unpackId (Id id) =
     id
 
 
-accountForId : Id a -> Counter (Id a) -> Counter (Id a)
-accountForId id (IdCounter nextId as counter) =
-    if unpack id >= nextId then
-        IdCounter ( unpack id + 10 )
+idToString : Id a -> String
+idToString (Id id) =
+    String.fromInt id
+
+
+idParser : Parser.Parser ( Id a )
+idParser =
+    Parser.map Id Parser.int
+
+
+accountForId : Id id -> Int -> Int
+accountForId id counterValue =
+    if unpackId id >= counterValue then
+        unpackId id + 10
     else
-        counter
+        counterValue
 
 
-unpackDict : Dict noCounter id value -> Dict.Dict Int value
-unpackDict dict =
+unpack : Dict noCounter id value -> Dict.Dict Int value
+unpack dict =
     case dict of
-        WithoutCounter _ innerDict ->
-            innerDict
+        WithCounter _ inner ->
+            inner
         
-        WithCounter _ innerDict ->
-            innerDict
+        WithoutCounter _ inner ->
+            inner
 
 
-packDict : Dict noCounter id b -> Dict.Dict Int a -> Dict noCounter id a
-packDict dict inner =
+getCounter : Dict Never id inner -> Int
+getCounter dict =
     case dict of
-        WithoutCounter value _ ->
-            WithoutCounter value inner
+        WithCounter counter _ ->
+            counter
+        
+        WithoutCounter _ _ ->
+            --This should be impossible, so just recurse
+            getCounter dict
 
+
+pack : Dict noCounter id b -> Dict.Dict Int value -> Dict noCounter id value
+pack structure inner =
+    case structure of
         WithCounter counter _ ->
             WithCounter counter inner
+        
+        WithoutCounter noCounter _ ->
+            WithoutCounter noCounter inner
 
 
-mapDict : ( Dict.Dict Int a -> Dict.Dict Int b ) -> Dict noCounter id a -> Dict noCounter id b
-mapDict func dict =
+map : ( Dict.Dict Int a -> Dict.Dict Int b ) -> Dict noCounter id a -> Dict noCounter id b
+map func dict =
     case dict of
-        WithoutCounter value inner ->
-            WithoutCounter value ( func inner )
-
         WithCounter counter inner ->
             WithCounter counter ( func inner )
+        
+        WithoutCounter noCounter inner ->
+            WithoutCounter noCounter ( func inner )
