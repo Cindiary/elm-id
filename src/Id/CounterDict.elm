@@ -5,6 +5,7 @@ module Id.CounterDict exposing
     , fromList
     , getCounter
     , toList
+    , toDict
     , isEmpty
     , size
     , member
@@ -38,7 +39,7 @@ module Id.CounterDict exposing
 
 Most of the functions in this module are a alias for the same function in [`Id.Dict`](Id.Dict), which can handle both 'Id.Dict' and 'Id.CounterDict'
 
-@docs empty, singleton, fromList, getCounter, toList
+@docs empty, singleton, fromList, getCounter, toList, toDict
 @docs isEmpty, size
 @docs member, get, getFrom
 @docs add, addInto, addList, insert, remove, update
@@ -100,6 +101,12 @@ getCounter _ dict =
 toList : CounterDict (Id a) value -> List ( Id a, value )
 toList =
     Id.Dict.toList
+
+
+{-| Covert a Id.CounterDict into a regular (`Id.Dict`)[Id.Dict#Dict] -}
+toDict : CounterDict (Id a) value -> Id.Dict.Dict (Id a) value
+toDict dict =
+    WithoutCounter () ( unpack dict )
 
 
 {-| Add a value to the Dictionary and assign it a new [`Id`](Id#Id). -}

@@ -3,7 +3,6 @@ module Id.Dict exposing
     , Dict_
     , empty
     , singleton
-    , fromDict
     , fromList
     , toList
     , isEmpty
@@ -35,7 +34,7 @@ module Id.Dict exposing
 {-|
 @docs Dict, Dict_
 
-@docs empty, singleton, fromDict, fromList, toList
+@docs empty, singleton, fromList, toList
 @docs isEmpty, size
 @docs member, get, getFrom
 @docs insert, remove, update
@@ -84,12 +83,6 @@ fromList list =
     list
     |> List.foldl ( \( id, value ) dict -> Dict.insert ( unpackId id ) value dict ) Dict.empty
     |> pack
-
-
-{-| Convert any `Id` dictionary into a regular [`Id.Dict`](Id.Dict) -}
-fromDict : Dict_ counter id value -> Dict id value
-fromDict dict =
-    pack ( unpack dict )
 
 
 pack : Dict.Dict Int value -> Dict id value

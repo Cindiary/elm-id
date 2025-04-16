@@ -4,6 +4,8 @@ module Id.Set exposing
     , empty
     , singleton
     , fromList
+    , fromIdList
+    , fromCounterList
     , fromDict
     , toList
     , isEmpty
@@ -25,7 +27,7 @@ module Id.Set exposing
 {-|
 @docs Set, Set_
 
-@docs empty, singleton, fromList, fromDict, toList
+@docs empty, singleton, fromList, fromDict, fromIdList, fromCounterList, toList
 
 @docs isEmpty, size, member
 
@@ -48,6 +50,8 @@ import Dict
 import Json.Encode as E
 import Json.Decode as D
 import Id.Counter
+import Id.CounterList
+import Id.List
 
 {-| A set type for Ids, is equal to a [`Id.Dict`](Id.Dict#Dict) with empty tuples as values -}
 type alias Set id = Id.Dict.Dict id ()
@@ -81,12 +85,26 @@ fromList list =
     |> pack
 
 
-{-| Create a set with the Ids from a [`Dict`](Id.Dict#Dict) -}
-fromDict : Id.Dict.Dict_ counter (Id a) value -> Set_ counter (Id a)
+{-| Create a set with the Ids from a [`Id.Dict`](Id.Dict#Dict) -}
+fromDict : Id.Dict.Dict_ counter (Id a) value -> Set (Id a)
 fromDict dict =
     unpack dict
     |> Dict.map ( \_ _ -> () )
-    |> Internal.pack dict
+    |> pack
+
+
+{-| Create a set with the Ids from a [`Id.List`](Id.List#List) -}
+fromIdList : Id.List.List (Id a) value -> Set (Id a)
+fromIdList list =
+    List.foldl ( \( id, _ ) dict -> Dict.insert ( unpackId id ) () dict ) Dict.empty list
+    |> pack
+
+
+{-| Create a set with the Ids from a [`Id.CounterList`](Id.CounterList#CounterList) -}
+fromCounterList : Id.CounterList.CounterList (Id a) value -> Set (Id a)
+fromCounterList list =
+    Id.CounterList.foldl ( \id _ dict -> Dict.insert ( unpackId id ) () dict ) Dict.empty list
+    |> pack
 
 
 {-| Get all of the Ids in a set, sorted from lowest to highest. -}
@@ -164,7 +182,8 @@ intersect =
 {-| Get the union of two sets. Keep all Ids. -}
 union : Id.Dict.Dict_ counter1 (Id a) b -> Set_ counter2 (Id a) -> Set_ counter2 (Id a)
 union dict1 set2 =
-    Id.Dict.fold ( \id _ set -> insert id set ) set2 dict1
+    Dict.foldl ( \id _ set -> Dict.insert id () set ) ( unpack set2 ) ( unpack dict1 )
+    |> Internal.pack set2
 
 
 {-| Encode [`Set`](Id.Set#Set) to a JSON value -}

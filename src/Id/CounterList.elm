@@ -4,8 +4,10 @@ module Id.CounterList exposing
     , singleton
     , fromList
     , fromIdList
-    , getCounter
+    , fromDict
     , toList
+    , toDict
+    , getCounter
     , isEmpty
     , length
     , member
@@ -41,7 +43,7 @@ module Id.CounterList exposing
 
 Most of the functions in this module are a alias for the same function in [`Id.List`](Id.List), which can handle both 'Id.List' and 'CounterList'
 
-@docs empty, singleton, fromList, fromIdList, getCounter, toList
+@docs empty, singleton, fromList, fromIdList, fromDict, toList, toDict, getCounter
 @docs isEmpty, length
 @docs member, get, getFrom
 @docs add, addInto, addAt, addList
@@ -63,8 +65,10 @@ import Json.Decode as D
 
 import Id.List
 import Id.Counter
+import Id.CounterDict
 
 import Parser as P exposing((|.), (|=))
+import Dict
 
 
 {-| A list with a id counter -}
@@ -113,6 +117,25 @@ fromIdList counter list =
     pack sanitizedCounter ( Id.List.removeDuplicateIds list )
 
 
+{-| Convert a [`Id.CounterDict`](Id.CounterDict#CounterDict) into a  CounterList. -}
+fromDict : Id.CounterDict.CounterDict ( Id a ) value -> CounterList ( Id a ) value
+fromDict dict =
+    CounterList ( Internal.getCounter dict ) ( Id.CounterDict.toList dict )
+
+
+{-| Convert a CounterList into a [`Id.List`](Id.List#List). -}
+toList : CounterList id value -> Id.List.List id value
+toList ( CounterList _ list ) =
+    list
+
+
+{-| Convert a CounterList into a [`Id.CounterDict`](Id.CounterDict#CounterDict). -}
+toDict : CounterList ( Id a ) value -> Id.CounterDict.CounterDict ( Id a ) value
+toDict ( CounterList counter list ) =
+    List.foldl ( \( id, value ) dict -> Dict.insert ( Internal.unpackId id ) value dict ) Dict.empty list
+    |> Internal.WithCounter counter
+
+
 getCounter_ : CounterList id value -> Int
 getCounter_ ( CounterList value _ ) =
     value
@@ -122,12 +145,6 @@ getCounter_ ( CounterList value _ ) =
 getCounter : a -> CounterList ( Id a ) value -> Counter ( Id a )
 getCounter _ list =
     IdCounter ( getCounter_ list )
-
-
-{-| Convert a CounterList into a [`Id.List`](Id.List#List). -}
-toList : CounterList id value -> Id.List.List id value
-toList ( CounterList _ list ) =
-    list
 
 
 {-| Add a value to the List and assign it a new [`Id`](Id#Id). -}

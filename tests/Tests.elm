@@ -30,6 +30,11 @@ id value =
     Id.debugId Debug.todo value
 
 
+unpackCounter : Id.Counter a -> Int
+unpackCounter ( Internal.IdCounter value ) =
+    value
+
+
 idFuzzer : Fuzzer Id
 idFuzzer =
     Fuzz.intAtLeast 1
@@ -214,20 +219,26 @@ counterDictTest =
             Fuzz.pair ( Fuzz.maybe idFuzzer ) valueFuzzer
             |> Fuzz.list
             |> Fuzz.map fromMaybeIdList
+        unpackDictCounter dict = unpackCounter ( Id.CounterDict.getCounter () dict )
     in
     describe "Id.CounterDict"
-    [ test "Insert increases internal counter when adding higher Id" <| \_ ->
+    [ test "Adding" <| \_ ->
+        empty
+        |> Id.CounterDict.addInto 1
+        |> Id.CounterDict.addInto 2
+        |> Id.CounterDict.addInto 3
+        |> Id.CounterDict.addInto 4
+        |> Id.CounterDict.addInto 5
+        |> Id.Dict.values
+        |> Expect.equal [ 1, 2, 3, 4, 5 ]
+    , test "Insert increases internal counter when adding higher Id" <| \_ ->
         empty
         |> Id.CounterDict.insert ( id 200 ) ()
-        |> Id.CounterDict.add ()
-        |> Tuple.first
-        |> Internal.unpackId
+        |> unpackDictCounter
         |> Expect.atLeast 201
     , test "Initial counter value is below 200 (for the sake of previous test)" <| \_ ->
         empty
-        |> Id.CounterDict.add ()
-        |> Tuple.first
-        |> Internal.unpackId
+        |> unpackDictCounter
         |> Expect.atMost 199
     , describe "Json" <|
         [ test "Encoding and decoding" <| \_ ->
